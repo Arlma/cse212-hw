@@ -1,63 +1,76 @@
-﻿public class PriorityQueue
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace Week02Code
 {
-    private List<PriorityItem> _queue = new();
-
-    /// <summary>
-    /// Add a new value to the queue with an associated priority.  The
-    /// node is always added to the back of the queue regardless of 
-    /// the priority.
-    /// </summary>
-    /// <param name="value">The value</param>
-    /// <param name="priority">The priority</param>
-    public void Enqueue(string value, int priority)
+    public class PriorityQueue<T>
     {
-        var newNode = new PriorityItem(value, priority);
-        _queue.Add(newNode);
-    }
-
-    public string Dequeue()
-    {
-        if (_queue.Count == 0) // Verify the queue is not empty
+        private class Node
         {
-            throw new InvalidOperationException("The queue is empty.");
+            public T Value { get; }
+            public int Priority { get; }
+            public long Sequence { get; }
+
+            public Node(T value, int priority, long sequence)
+            {
+                Value = value;
+                Priority = priority;
+                Sequence = sequence;
+            }
         }
 
-        // Find the index of the item with the highest priority to remove
-        var highPriorityIndex = 0;
-        for (int index = 1; index < _queue.Count - 1; index++)
+        private readonly List<Node> _list = new List<Node>();
+        private long _sequenceCounter = 0;
+
+        // Enqueue: add to back (we keep insertion order by sequence)
+        public void Enqueue(T value, int priority)
         {
-            if (_queue[index].Priority >= _queue[highPriorityIndex].Priority)
-                highPriorityIndex = index;
+            // Assign a sequence to maintain FIFO for equal priority
+            var node = new Node(value, priority, _sequenceCounter++);
+            _list.Add(node);
         }
 
-        // Remove and return the item with the highest priority
-        var value = _queue[highPriorityIndex].Value;
-        return value;
-    }
+        // Dequeue: remove item with highest priority; if tie -> earliest sequence
+        public T Dequeue()
+        {
+            if (_list.Count == 0)
+            {
+                throw new InvalidOperationException("The queue is empty.");
+            }
 
-    // DO NOT MODIFY THE CODE IN THIS METHOD
-    // The graders rely on this method to check if you fixed all the bugs, so changes to it will cause you to lose points.
-    public override string ToString()
-    {
-        return $"[{string.Join(", ", _queue)}]";
-    }
-}
+            // find max priority value
+            int maxPriority = _list.Max(n => n.Priority);
 
-internal class PriorityItem
-{
-    internal string Value { get; set; }
-    internal int Priority { get; set; }
+            // among nodes with max priority choose smallest sequence (earliest)
+            Node chosen = null;
+            long bestSequence = long.MaxValue;
+            int chosenIndex = -1;
+            for (int i = 0; i < _list.Count; i++)
+            {
+                var node = _list[i];
+                if (node.Priority == maxPriority && node.Sequence < bestSequence)
+                {
+                    chosen = node;
+                    bestSequence = node.Sequence;
+                    chosenIndex = i;
+                }
+            }
 
-    internal PriorityItem(string value, int priority)
-    {
-        Value = value;
-        Priority = priority;
-    }
+            // Remove the chosen node from list and return its value
+            if (chosenIndex >= 0)
+            {
+                T value = _list[chosenIndex].Value;
+                _list.RemoveAt(chosenIndex);
+                return value;
+            }
 
-    // DO NOT MODIFY THE CODE IN THIS METHOD
-    // The graders rely on this method to check if you fixed all the bugs, so changes to it will cause you to lose points.
-    public override string ToString()
-    {
-        return $"{Value} (Pri:{Priority})";
+            // Fallback (shouldn't reach here)
+            throw new InvalidOperationException("No item found to dequeue.");
+        }
+
+        public int Count => _list.Count;
+
+        public bool IsEmpty => _list.Count == 0;
     }
 }
