@@ -36,7 +36,7 @@ public class Maze
     /// </summary>
     public void MoveUp()
     {
-        if (!CanMove(0)) // up is index 0
+        if (!CanMove(2)) // up is index 2
         {
             throw new InvalidOperationException("Can't go that way!");
         }
@@ -60,7 +60,7 @@ public class Maze
     /// </summary>
     public void MoveDown()
     {
-        if (!CanMove(2)) // down is index 2
+        if (!CanMove(0)) // down is index 0
         {
             throw new InvalidOperationException("Can't go that way!");
         }
@@ -81,7 +81,7 @@ public class Maze
 
     /// <summary>
     /// Check if a move in the given direction is allowed
-    /// direction: 0=up, 1=right, 2=down, 3=left
+    /// direction: 0=down, 1=right, 2=up, 3=left
     /// </summary>
     private bool CanMove(int direction)
     {
@@ -93,20 +93,23 @@ public class Maze
 
         var cell = _map[key];
 
-        // Check if move is allowed from current cell
-        if (!cell[direction])
-            return false;
-
         // Calculate destination
         int nextX = _currentX;
         int nextY = _currentY;
 
-        if (direction == 0) nextY--; // up
+        if (direction == 0) nextY++; // down
         else if (direction == 1) nextX++; // right
-        else if (direction == 2) nextY++; // down
+        else if (direction == 2) nextY--; // up
         else if (direction == 3) nextX--; // left
 
-        // Check if destination exists in map
-        return _map.ContainsKey((nextX, nextY));
+        var destKey = (nextX, nextY);
+        // Destination must exist
+        if (!_map.ContainsKey(destKey))
+            return false;
+
+        var destCell = _map[destKey];
+
+        // Movement is allowed if the current cell permits it
+        return cell[direction];
     }
 }
